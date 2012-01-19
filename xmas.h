@@ -19,9 +19,7 @@
 //   **     be easily portable to other microcontrollers.
 //   */
 
-#include "WProgram.h"
-
-
+#include "Arduino.h"
 
 #define xmas_color_t uint16_t
 
@@ -40,14 +38,14 @@
 #define COLOR_YELLOW COLOR(CHANNEL_MAX,CHANNEL_MAX,0)
 
 // Pin setup
-#define STRAND_COUNT 2
-#define STRAND_PINS {4, 6}
 #define STATUSPIN 13 // The LED
 
-#define WIDTH 10
-#define HEIGHT 10
-
-const int strand_pin[STRAND_COUNT] = STRAND_PINS;
+extern const int width;
+extern const int height;
+extern const int strand_count;
+extern const int strand_pins[];
+extern const int strand_pin_lookup_table[];
+extern const int bulb_lookup_table[];
 
 void xmas_begin(int strand);
 void xmas_one(int strand);
@@ -64,19 +62,25 @@ void clear();
 
 // returns the strand number for coordinate (x, y)
 inline uint8_t translate_strand(int x, int y) {
-  return x % STRAND_COUNT;
+  return strand_pin_lookup_table[y * width + x];
 }
 
 // returns the bulb number that corresponds to coordinate (x, y)
 inline uint8_t translate(int x, int y) {
-  int n;
-  n = (x - translate_strand(x, y)) / STRAND_COUNT * HEIGHT;
-  n += (n / HEIGHT) % 2 == 1 ?  y : (HEIGHT - y - 1);
-  return n;
+  return bulb_lookup_table[y * width + x];
 }
 
 // turn the pixel (x, y) on to +intensity+ with +color+
 inline void set_pixel(uint8_t x, uint8_t y, uint8_t intensity, xmas_color_t color) {
+  //Serial.print("set_pixel");
+  //Serial.print(" x = ");
+  //Serial.println(x);
+  //Serial.print(" y = ");
+  //Serial.println(y);
+  //Serial.print(" translate_strand(x,y) = ");
+  //Serial.println(translate_strand(x,y));
+  //Serial.print(" translate(x,y) = ");
+  //Serial.println(translate(x,y));
   xmas_set_color(translate_strand(x, y), translate(x, y), intensity, color);
 }
 static inline void swap(uint8_t *a, uint8_t *b);

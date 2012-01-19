@@ -1,35 +1,39 @@
-#include "WProgram.h"
+#include "Arduino.h"
 #include "xmas.h"
+#include <util/delay.h>
+
+#define PIN_HIGH(x) PORTD |= (1 << x)
+#define PIN_LOW(x) PORTD &= ~(1 << x)
 
 // begin a serial packet on +strand+
-void xmas_begin(int strand) {
-  digitalWrite(strand_pin[strand], 1);
-  delayMicroseconds(7);
-  digitalWrite(strand_pin[strand], 0);
+void xmas_begin(int strand_pin) {
+  PIN_HIGH(strand_pin);
+  _delay_us(10);
+  PIN_LOW(strand_pin);
 }
 
 // send a serial 1 on +strand+
-void xmas_one(int strand) {
-  digitalWrite(strand_pin[strand], 0);
-  delayMicroseconds(11); // 20us low
-  digitalWrite(strand_pin[strand], 1);
-  delayMicroseconds(7);
-  digitalWrite(strand_pin[strand], 0);
+void xmas_one(int strand_pin) {
+  PIN_LOW(strand_pin);
+  _delay_us(20);
+  PIN_HIGH(strand_pin);
+  _delay_us(8);
+  PIN_LOW(strand_pin);
 }
 
 // send a serial 0 on +strand+
-void xmas_zero(int strand) {
-  digitalWrite(strand_pin[strand], 0);
-  delayMicroseconds(2);
-  digitalWrite(strand_pin[strand], 1);
-  delayMicroseconds(20 - 3);
-  digitalWrite(strand_pin[strand], 0);
+void xmas_zero(int strand_pin) {
+  PIN_LOW(strand_pin);
+  _delay_us(10);
+  PIN_HIGH(strand_pin);
+  _delay_us(20);
+  PIN_LOW(strand_pin);
 }
 
 // end serial packet on +strand+
-void xmas_end(int strand) {
-  digitalWrite(strand_pin[strand],0);
-  delayMicroseconds(40);
+void xmas_end(int strand_pin) {
+  PIN_LOW(strand_pin);
+  _delay_us(30);
 }
 
 
@@ -42,23 +46,24 @@ void xmas_fill_color(int strand, uint8_t begin, uint8_t count, uint8_t intensity
 // set pixel number +led+ along a +strand+ to +color+ at +intensity+
 void xmas_set_color(int strand, uint8_t led, uint8_t intensity, xmas_color_t color) {
   uint8_t i;
-  xmas_begin(strand);
+  int strand_pin = strand_pins[strand];
+  xmas_begin(strand_pin);
   for(i = 6; i; i--, (led <<= 1))
     if(led & (1 << 5))
-      xmas_one(strand);
+      xmas_one(strand_pin);
     else
-      xmas_zero(strand);
+      xmas_zero(strand_pin);
   for(i = 8; i; i--, (intensity <<= 1))
     if(intensity & ( 1 << 7))
-      xmas_one(strand);
+      xmas_one(strand_pin);
     else
-      xmas_zero(strand);
+      xmas_zero(strand_pin);
   for(i = 12; i; i--, (color <<= 1))
     if(color & (1 << 11))
-      xmas_one(strand);
+      xmas_one(strand_pin);
     else
-      xmas_zero(strand);
-  xmas_end(strand);
+      xmas_zero(strand_pin);
+  xmas_end(strand_pin);
 }
 
 // returns a color value that represents an RGB triple
@@ -73,8 +78,7 @@ xmas_color_t xmas_color(uint8_t r, uint8_t g, uint8_t b) {
 // command it first hears (and then doesn't pass the command on, while it does
 // pass on all future commands it receives that are not addressed to it).
 void clear() {
-  for(int i = 0; i < STRAND_COUNT; i++) {
-    pinMode(strand_pin[i], OUTPUT);
+  for(int i = 0; i < strand_count; i++) {
     xmas_fill_color(i, 0, LIGHT_COUNT, DEFAULT_INTENSITY, COLOR_BLACK);
   }
 }
